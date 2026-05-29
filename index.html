@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>飲ゲーム飲食店 計算アプリ</title>
+  <style>
+    :root {
+      --bg: #fff7ed;
+      --card: #ffffff;
+      --accent: #f97316;
+      --accent-dark: #ea580c;
+      --food: #fb923c;
+      --drink: #38bdf8;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+    }
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    header h1 {
+      font-size: 1.4rem;
+      margin: 0 0 4px;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .section-title {
+      font-weight: bold;
+      margin: 18px 0 8px;
+      padding-left: 10px;
+      border-left: 4px solid var(--accent);
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .item-info { display: flex; flex-direction: column; }
+    .item-name { font-weight: 600; }
+    .item-price { font-size: 0.8rem; color: var(--muted); }
+    .qty {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .qty button {
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .qty button:active { background: var(--accent-dark); }
+    .qty button.minus { background: #e5e7eb; color: #374151; }
+    .qty input {
+      width: 48px;
+      height: 34px;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .badge {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .badge.food { background: var(--food); }
+    .badge.drink { background: var(--drink); }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn-calc {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-calc:active { background: var(--accent-dark); }
+    .btn-reset {
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: none;
+    }
+    .result.show { display: block; }
+    .result h2 { margin: 0 0 12px; font-size: 1rem; }
+    .result-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      padding: 4px 0;
+      color: var(--text);
+    }
+    .result-line .name { color: var(--muted); }
+    .result-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 2px dashed var(--border);
+      font-weight: bold;
+    }
+    .result-total .amount {
+      font-size: 1.6rem;
+      color: var(--accent-dark);
+    }
+    .empty-msg { color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🍻 飲ゲーム飲食店 計算アプリ</h1>
+      <p>数量を選んで「計算する」を押してください</p>
+    </header>
+
+    <div class="section-title">🍴 食べ物</div>
+    <div id="food-list"></div>
+
+    <div class="section-title">🥤 飲み物</div>
+    <div id="drink-list"></div>
+
+    <div class="actions">
+      <button class="btn-calc" id="calcBtn">計算する</button>
+      <button class="btn-reset" id="resetBtn">リセット</button>
+    </div>
+
+    <div class="result" id="result">
+      <h2>📋 注文内容</h2>
+      <div id="result-details"></div>
+      <div class="result-total">
+        <span>合計金額</span>
+        <span class="amount" id="total-amount">¥0</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // メニュー定義（名称・価格は自由に変更できます）
+    const MENU = {
+      food: [
+        { id: 'f1', name: '唐揚げ',       price: 480 },
+        { id: 'f2', name: '枝豆',         price: 300 },
+        { id: 'f3', name: 'フライドポテト', price: 350 },
+        { id: 'f4', name: '焼きおにぎり',  price: 250 },
+      ],
+      drink: [
+        { id: 'd1', name: '生ビール',     price: 500 },
+        { id: 'd2', name: 'ハイボール',   price: 450 },
+        { id: 'd3', name: 'サワー',       price: 400 },
+        { id: 'd4', name: 'ソフトドリンク', price: 300 },
+      ],
+    };
+
+    const quantities = {};
+
+    function renderItems(items, containerId, badgeClass) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      items.forEach(item => {
+        quantities[item.id] = 0;
+        const row = document.createElement('div');
+        row.className = 'item';
+        row.innerHTML = `
+          <div class="item-info">
+            <span class="item-name"><span class="badge ${badgeClass}"></span>${item.name}</span>
+            <span class="item-price">¥${item.price.toLocaleString()}</span>
+          </div>
+          <div class="qty">
+            <button class="minus" data-id="${item.id}" data-delta="-1">−</button>
+            <input type="number" min="0" value="0" id="qty-${item.id}" data-id="${item.id}">
+            <button class="plus" data-id="${item.id}" data-delta="1">＋</button>
+          </div>`;
+        container.appendChild(row);
+      });
+    }
+
+    function updateQty(id, value) {
+      let v = parseInt(value, 10);
+      if (isNaN(v) || v < 0) v = 0;
+      quantities[id] = v;
+      document.getElementById('qty-' + id).value = v;
+    }
+
+    function calculate() {
+      const all = [...MENU.food, ...MENU.drink];
+      let total = 0;
+      const lines = [];
+      all.forEach(item => {
+        const qty = quantities[item.id] || 0;
+        if (qty > 0) {
+          const subtotal = qty * item.price;
+          total += subtotal;
+          lines.push(`
+            <div class="result-line">
+              <span class="name">${item.name} × ${qty}</span>
+              <span>¥${subtotal.toLocaleString()}</span>
+            </div>`);
+        }
+      });
+
+      const details = document.getElementById('result-details');
+      details.innerHTML = lines.length
+        ? lines.join('')
+        : '<p class="empty-msg">商品が選択されていません。</p>';
+      document.getElementById('total-amount').textContent = '¥' + total.toLocaleString();
+      document.getElementById('result').classList.add('show');
+    }
+
+    function reset() {
+      Object.keys(quantities).forEach(id => updateQty(id, 0));
+      document.getElementById('result').classList.remove('show');
+    }
+
+    // 初期化
+    renderItems(MENU.food, 'food-list', 'food');
+    renderItems(MENU.drink, 'drink-list', 'drink');
+
+    // イベント（増減ボタン）
+    document.body.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-delta]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const delta = parseInt(btn.dataset.delta, 10);
+      updateQty(id, (quantities[id] || 0) + delta);
+    });
+
+    // イベント（直接入力）
+    document.body.addEventListener('input', e => {
+      if (e.target.matches('input[type="number"]')) {
+        updateQty(e.target.dataset.id, e.target.value);
+      }
+    });
+
+    document.getElementById('calcBtn').addEventListener('click', calculate);
+    document.getElementById('resetBtn').addEventListener('click', reset);
+  </script>
+</body>
+</html>
