@@ -109,7 +109,10 @@
     }
     .qty button {
       flex: 1;
+      min-width: 0;
       height: 40px;
+      padding: 0;
+      white-space: nowrap;
       border: none;
       border-radius: 9px;
       background: linear-gradient(145deg, var(--accent), var(--accent-dark));
@@ -281,12 +284,10 @@
           </div>
           <div class="qty">
             <button class="clear" data-id="${item.id}" data-set="0">クリア</button>
-            <button class="minus" data-id="${item.id}" data-delta="-10">−10</button>
-            <button class="minus" data-id="${item.id}" data-delta="-5">−5</button>
-            <button class="minus" data-id="${item.id}" data-delta="-1">−1</button>
             <button class="plus" data-id="${item.id}" data-delta="1">＋1</button>
             <button class="plus" data-id="${item.id}" data-delta="5">＋5</button>
             <button class="plus" data-id="${item.id}" data-delta="10">＋10</button>
+            <button class="plus" data-id="${item.id}" data-delta="50">＋50</button>
           </div>`;
         container.appendChild(row);
       });
